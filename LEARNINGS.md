@@ -61,3 +61,11 @@ RESULT PASS
 - publish.sh が OGP タグを index.html へ挿入したため、**公開実体で harness を取り直した**: `docs/harness-reports/242-konta-factory-2026-09-19T07-20-19-018Z.md` → 14項目すべて PASS
 - 学び: publish.sh の OGP 挿入は harness の後に走る。公開後の実体で1回取り直さないと、証跡が公開物と一致しない
 - 未検証: iPhone実機（harness は Playwright/WebKit 390px のみ）
+
+## 2026-09-19 旧URLの404を修復
+- 症状: `https://titan11111.github.io/242-konta-factory/konta-factory.html` が **404**。本体（`/242-konta-factory/`）は 200 で生きていた
+- 原因: エントリを `konta-factory.html` → `index.html` へ改名したため、**改名前に配ったリンクだけが死んだ**。リポジトリもPagesも正常
+- 対処: `konta-factory.html` を index.html へのリダイレクト専用ページとして復活（meta refresh ＋ `location.replace()` の二段。`?query`・`#hash` も引き継ぐ）
+- 検証: 旧URL **404 → 200** を Pages ビルド完了後に実測。本体URLも 200 のまま
+- 学び: **エントリ名を変えたら旧名をリダイレクトとして残す**。フォルダ改名と違い「本体は200」なので気づけない
+- 検出: `_tools/check-legacy-entry.sh` で機械検出できるようにした（245で同じ事故が出たのを機に新設）
