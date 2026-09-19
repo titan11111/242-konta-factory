@@ -265,6 +265,7 @@ function updateADrone(){
   const sp=Math.abs(d.x-p.x)>320?3.2:A_SPEED;
   const step=Math.min(sp,dist);
   d.x+=dx/dist*step;d.y+=dy/dist*step;
+  d.y=Math.max(d.y,20);
   if(d.tgt&&d.cd<=0&&Math.abs(tx-d.x)<4&&Math.abs(ty-d.y)<10)d.charge=A_CHARGE;
   return null;
 }
@@ -360,10 +361,10 @@ function update(){
 
 /* ---- 背景（ステージごとに別の場所に見せる） ---------------------------- */
 const THEME={
-  dusk  :{sky:'#2b2140',floor:'#3d3357',plat:'#4a3f66',edge:'#6fd6c2',line:'#5b4f7a'},
+  dusk:{sky:'#2b2140',floor:'#3d3357',plat:'#4a3f66',edge:'#6fd6c2',line:'#5b4f7a'},
   inside:{sky:'#1d1a2b',floor:'#332c46',plat:'#443a5c',edge:'#f2c14e',line:'#4f4468'},
-  lab   :{sky:'#10231f',floor:'#1d3a33',plat:'#265046',edge:'#7fe3a8',line:'#2f6455'},
-  scrap :{sky:'#141a2e',floor:'#2e3350',plat:'#3d4368',edge:'#b8acd2',line:'#474d72'},
+  lab:{sky:'#10231f',floor:'#1d3a33',plat:'#265046',edge:'#7fe3a8',line:'#2f6455'},
+  scrap:{sky:'#141a2e',floor:'#2e3350',plat:'#3d4368',edge:'#b8acd2',line:'#474d72'},
   hitech:{sky:'#0d1a2e',floor:'#1b2e4d',plat:'#26416b',edge:'#7fd4ff',line:'#2f4f7d'}
 };
 function drawBG(){
