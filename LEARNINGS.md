@@ -378,4 +378,6 @@ import 行を触ることになる。同一グローバルスコープなら**�
 ### 未検証
 
 - iPhone 実機
-- Pages 反映後の本番URL目視（公開後に curl する）
+- iPhone 実機の通しプレイ
+
+旧エントリ `konta-factory.html` は git履歴に公開証拠があるため、リダイレクトHTMLを残した（鉄則8）。
