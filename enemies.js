@@ -482,13 +482,13 @@
     }},
 
   /* 33 プロトタイプ００４号：未完成のコン太型。片耳、飛び込み＋1発 */
-  proto004:{hp:5,w:66,h:96,ground:true,boss:true,
+  proto004:{hp:5,w:88,h:128,ground:true,boss:true,
     spawn(e){e.cd=80;e.vx=1;},
     update(e){
       patrol(e,.8);
       if(near(e,210)&&--e.cd<=0){
         e.cd=100;e.vy=-6.2;e.vx=dirTo(e)*2.5;
-        shot(e.x+30,e.y+42,dirTo(e)*2.5,0,O);
+        shot(e.x+40,e.y+56,dirTo(e)*2.5,0,O);
         bossSfx('proto004');
       }
     },
@@ -503,7 +503,7 @@
     }},
 
   /* 34 警備ロボ１００５：黄黒の盾。近いと突進、遠いと弾 */
-  guard1005:{hp:6,w:84,h:102,ground:true,boss:true,
+  guard1005:{hp:6,w:112,h:136,ground:true,boss:true,
     spawn(e){e.cd=55;e.dash=0;e.vx=1;},
     update(e){
       if(e.dash>0){e.dash--;e.vx=dirTo(e)*3.4;e.vy=Math.min(e.vy+.5,10);move(e);}
@@ -512,7 +512,7 @@
         if(near(e,240)&&--e.cd<=0){
           e.cd=86;
           if(Math.abs(p.x-e.x)<90)e.dash=16;
-          else shot(e.x+42,e.y+36,dirTo(e)*3.3,0,Y);
+          else shot(e.x+56,e.y+48,dirTo(e)*3.3,0,Y);
           bossSfx('guard1005');
         }
       }
@@ -526,12 +526,12 @@
     }},
 
   /* 35 ロボ人体の模型３号：骨格が見える。弧を描く腕弾 */
-  model3:{hp:7,w:60,h:114,ground:true,boss:true,
+  model3:{hp:7,w:80,h:152,ground:true,boss:true,
     spawn(e){e.cd=48;e.vx=1;},
     update(e){
       patrol(e,.45);
       if(near(e,250)&&--e.cd<=0){
-        e.cd=76;shot(e.x+24,e.y+30,dirTo(e)*2.3,-2.4,C,.22);
+        e.cd=76;shot(e.x+32,e.y+40,dirTo(e)*2.3,-2.4,C,.22);
         bossSfx('model3');
       }
     },
@@ -546,14 +546,14 @@
     }},
 
   /* 36 人造人間の集合体：胴が重なる。低HPで mini を剥がす */
-  aggregate:{hp:8,w:108,h:84,ground:true,boss:true,
+  aggregate:{hp:8,w:144,h:112,ground:true,boss:true,
     spawn(e){e.cd=70;e.vx=1;e.shed=0;},
     update(e){
       patrol(e,1.15);
       if(near(e,260)&&--e.cd<=0){
         e.cd=98;const d=dirTo(e);
-        shot(e.x+24,e.y+24,d*2.3,-.5,R);shot(e.x+66,e.y+36,d*2.8,.3,R);
-        if(e.hp<=4&&e.shed<2){e.shed++;spawnEnemy('mini',e.x+24,e.y,{});}
+        shot(e.x+32,e.y+32,d*2.3,-.5,R);shot(e.x+88,e.y+48,d*2.8,.3,R);
+        if(e.hp<=4&&e.shed<2){e.shed++;spawnEnemy('mini',e.x+32,e.y,{});}
         bossSfx('aggregate');
       }
     },
@@ -567,7 +567,7 @@
     }},
 
   /* 37 開発者騎乗機：監督機の胴に人が乗っている */
-  rider:{hp:10,w:120,h:114,boss:true,
+  rider:{hp:10,w:160,h:152,boss:true,
     spawn(e){e.by=e.y;e.cd=90;},
     update(e){
       e.y=e.by+Math.sin(frame*.03)*10;
@@ -575,7 +575,7 @@
         e.x+=dirTo(e)*.42;
         if(--e.cd<=0){
           e.cd=108;const d=dirTo(e);
-          for(let k=-2;k<=2;k++)shot(e.x+54,e.y+66,d*2.15,k*.7,P);
+          for(let k=-2;k<=2;k++)shot(e.x+72,e.y+88,d*2.15,k*.7,P);
           bossSfx('rider');
         }
       }
