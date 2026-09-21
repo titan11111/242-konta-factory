@@ -7,7 +7,7 @@
  *
  * index.html より先に classic script として読むこと（同一グローバルスコープ前提）。
  * 使えるグローバル: p / GY / W / H / frame / enemies / bullets / solids / ctx
- *                   move() / hit() / burst() / spawnEnemy()
+ *                   move() / hit() / burst() / spawnEnemy() / bossSfx()
  *
  * 1エントリの形:
  *   hp,w,h        必須。初期HPと当たり判定サイズ
@@ -400,7 +400,196 @@
       fill(M,x+6,y,22,5);fill(M,x-4,y+12,6,10);fill(M,x+32,y+12,6,10);
       const hot=e.cd<34;
       fill(hot?R:C,x+8,y+12,18,7);fill(K,x+11,y+14,3,3);fill(K,x+20,y+14,3,3);
-      fill(hot?Y:S,x+14,y+24,6,4);}}
+      fill(hot?Y:S,x+14,y+24,6,4);}},
+
+  /* 31 天井プレス：壊せない。予告のあと廊下一本を叩き潰し、開いているあいだに通る */
+  press:{hp:1,w:72,h:12,tough:true,
+    spawn(e){e.top=e.y;e.t0=(e.x|0)%192;e.maxH=GY-e.top;},
+    update(e){
+      e.t0=(e.t0+1)%192;
+      const t=e.t0;
+      let k=0;
+      if(t>=96&&t<112)k=(t-96)/16;
+      else if(t>=112&&t<148)k=1;
+      else if(t>=148)k=1-(t-148)/44;
+      e.h=12+Math.round(k*(e.maxH-12));e.y=e.top;
+    },
+    draw(e,x,y){
+      const warn=e.t0>=72&&e.t0<96,hot=e.t0>=96&&e.t0<148;
+      fill(G,x+10,0,8,y+6);fill(G,x+e.w-18,0,8,y+6);
+      fill(S,x,y,e.w,e.h);
+      fill(hot?O:M,x+3,y+3,e.w-6,Math.max(4,Math.min(12,e.h-6)));
+      if(e.h>18){
+        ctx.save();ctx.beginPath();ctx.rect(x,y+e.h-10,e.w,10);ctx.clip();
+        fill(Y,x,y+e.h-10,e.w,10);
+        fill('#14101c');
+        const off=(frame*.5)%16;
+        for(let i=-16;i<e.w+16;i+=16){
+          ctx.beginPath();
+          ctx.moveTo(x+i+off,y+e.h);ctx.lineTo(x+i+8+off,y+e.h-10);
+          ctx.lineTo(x+i+12+off,y+e.h-10);ctx.lineTo(x+i+4+off,y+e.h);ctx.fill();
+        }
+        ctx.restore();
+      }
+      if(warn&&frame%8<4)fill(R,x,GY-5,e.w,5);
+    }},
+
+  /* 32 心拍シャッター：壊せない扉。拍動で開閉。開いているあいだだけ通れる */
+  shutter:{hp:1,w:16,h:76,tough:true,block:true,
+    spawn(e){e.full=e.h;e.open=0;e.t0=(e.x*3|0)%108;},
+    update(e){
+      e.t0=(e.t0+1)%108;
+      const want=e.t0>=32&&e.t0<78?1:0;
+      e.open+=(want-e.open)*.18;
+      e.h=14+Math.round((1-e.open)*(e.full-14));e.y=GY-e.h;
+    },
+    draw(e,x,y){
+      const beat=e.t0<10||(e.t0>14&&e.t0<24);
+      fill('#0f2622',x,y,e.w,e.h);
+      fill(beat?'#7fe3a8':'#265046',x+2,y+2,e.w-4,Math.max(4,e.h-6));
+      ctx.strokeStyle=beat?'#f7e6c4':'#7fe3a8';ctx.lineWidth=1.2;ctx.beginPath();
+      const mid=y+Math.max(10,e.h*.42);
+      ctx.moveTo(x+1,mid);ctx.lineTo(x+4,mid);
+      if(beat){ctx.lineTo(x+6,mid-9);ctx.lineTo(x+9,mid+7);ctx.lineTo(x+11,mid);}
+      ctx.lineTo(x+e.w-1,mid);ctx.stroke();
+      if(e.open<.3&&frame%10<5)fill(R,x-2,GY-5,e.w+4,5);
+    }},
+
+  /* 廃材落下：影が先、本体が落ちる。壊せない */
+  scrap:{hp:1,w:14,h:12,tough:true,drop:true,
+    spawn(e){e.t0=(e.x*5|0)%180;e.vy=0;},
+    update(e){
+      e.t0=(e.t0+1)%180;
+      if(e.t0<50){e.y=-22;e.vy=0;}
+      else if(e.t0<56){e.y=-22;}
+      else{
+        if(e.t0===56){e.y=-16;e.vy=0;}
+        e.vy=Math.min(e.vy+.5,9);e.y+=e.vy;
+        if(e.y>GY-e.h){e.y=GY-e.h;e.vy=0;}
+        if(e.t0>92)e.y=-22;
+      }
+    },
+    hazard(e){return e.vy>0&&e.y>-8?{x:e.x,y:e.y,w:e.w,h:e.h}:null;},
+    draw(e,x,y){
+      if(e.t0<56){
+        const a=.15+.2*(e.t0/56);
+        ctx.fillStyle=`rgba(20,16,38,${a})`;ctx.beginPath();ctx.ellipse(x+7,GY-4,10,4,0,0,7);ctx.fill();
+        if(e.t0>=40&&frame%6<3)fill(R,x,GY-6,14,3);
+        return;
+      }
+      fill('#2e3350',x,y,14,12);fill('#39406a',x+2,y+2,10,8);
+      fill('#5b4f7a',x+4,y+4,3,3);fill('#ff6b6b',x+8,y+5,2,2);
+    }},
+
+  /* 33 プロトタイプ００４号：未完成のコン太型。片耳、飛び込み＋1発 */
+  proto004:{hp:5,w:66,h:96,ground:true,boss:true,
+    spawn(e){e.cd=80;e.vx=1;},
+    update(e){
+      patrol(e,.8);
+      if(near(e,210)&&--e.cd<=0){
+        e.cd=100;e.vy=-6.2;e.vx=dirTo(e)*2.5;
+        shot(e.x+30,e.y+42,dirTo(e)*2.5,0,O);
+        bossSfx('proto004');
+      }
+    },
+    draw(e,x,y,fl){
+      fill('#1a4f44',x+2,y+24,6,8);fill('#1a4f44',x+13,y+24,6,8);
+      fill(body(fl,O),x+2,y+12,18,13);fill(K,x+5,y+14,12,7);fill(C,x+8,y+15,5,4);
+      fill(K,x+4,y+2,14,12);fill(O,x+3,y-1,16,4);
+      fill(O,x+4,y-8,4,8);                         // 片耳だけ
+      fill('#2b2140',x+6,y+5,11,5);fill(C,x+7,y+6,3,3);fill('#5b4f7a',x+13,y+6,3,3);
+      ctx.strokeStyle='#6fd6c2';ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(x+2,y+20);ctx.lineTo(x-4,y+28);ctx.stroke();
+    }},
+
+  /* 34 警備ロボ１００５：黄黒の盾。近いと突進、遠いと弾 */
+  guard1005:{hp:6,w:84,h:102,ground:true,boss:true,
+    spawn(e){e.cd=55;e.dash=0;e.vx=1;},
+    update(e){
+      if(e.dash>0){e.dash--;e.vx=dirTo(e)*3.4;e.vy=Math.min(e.vy+.5,10);move(e);}
+      else{
+        patrol(e,1);
+        if(near(e,240)&&--e.cd<=0){
+          e.cd=86;
+          if(Math.abs(p.x-e.x)<90)e.dash=16;
+          else shot(e.x+42,e.y+36,dirTo(e)*3.3,0,Y);
+          bossSfx('guard1005');
+        }
+      }
+    },
+    draw(e,x,y,fl){
+      fill(body(fl,G),x+4,y+18,20,16);
+      fill(Y,x,y+8,28,12);fill('#14101c',x,y+8,28,3);fill('#14101c',x,y+17,28,3);
+      fill(body(fl,S),x+6,y,16,10);fill(e.dash>0?R:C,x+10,y+3,8,4);
+      fill(Y,x+22,y+10,8,18);                       // 盾
+      fill('#14101c',x+8,y+30,5,4);fill('#14101c',x+16,y+30,5,4);
+    }},
+
+  /* 35 ロボ人体の模型３号：骨格が見える。弧を描く腕弾 */
+  model3:{hp:7,w:60,h:114,ground:true,boss:true,
+    spawn(e){e.cd=48;e.vx=1;},
+    update(e){
+      patrol(e,.45);
+      if(near(e,250)&&--e.cd<=0){
+        e.cd=76;shot(e.x+24,e.y+30,dirTo(e)*2.3,-2.4,C,.22);
+        bossSfx('model3');
+      }
+    },
+    draw(e,x,y,fl){
+      fill('#1d3a33',x+7,y+8,6,22);
+      fill(body(fl,K),x+3,y+12,14,10);
+      fill(frame%20<10?R:'#5b2f3a',x+7,y+14,6,6);   // 拍動する心臓
+      fill(K,x+4,y,12,10);fill('#0f2622',x+6,y+3,8,4);
+      fill('#265046',x+1,y+22,5,16);fill('#265046',x+14,y+22,5,16);
+      ctx.strokeStyle='#7fe3a8';ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.moveTo(x+18,y+14);ctx.lineTo(x+28,y+8);ctx.stroke();
+    }},
+
+  /* 36 人造人間の集合体：胴が重なる。低HPで mini を剥がす */
+  aggregate:{hp:8,w:108,h:84,ground:true,boss:true,
+    spawn(e){e.cd=70;e.vx=1;e.shed=0;},
+    update(e){
+      patrol(e,1.15);
+      if(near(e,260)&&--e.cd<=0){
+        e.cd=98;const d=dirTo(e);
+        shot(e.x+24,e.y+24,d*2.3,-.5,R);shot(e.x+66,e.y+36,d*2.8,.3,R);
+        if(e.hp<=4&&e.shed<2){e.shed++;spawnEnemy('mini',e.x+24,e.y,{});}
+        bossSfx('aggregate');
+      }
+    },
+    draw(e,x,y,fl){
+      const c=body(fl,O);
+      fill(c,x+2,y+8,14,14);fill(c,x+12,y+6,16,16);fill(c,x+20,y+10,14,14);
+      fill(K,x+6,y+2,10,8);fill(K,x+16,y,12,9);fill(K,x+24,y+3,10,8);
+      fill('#2b2140',x+8,y+4,6,3);fill('#2b2140',x+18,y+3,7,3);fill('#2b2140',x+26,y+5,6,3);
+      fill(C,x+9,y+5,2,2);fill(C,x+20,y+4,2,2);fill(C,x+27,y+6,2,2);
+      fill('#1a4f44',x+8,y+22,6,6);fill('#1a4f44',x+22,y+22,6,6);
+    }},
+
+  /* 37 開発者騎乗機：監督機の胴に人が乗っている */
+  rider:{hp:10,w:120,h:114,boss:true,
+    spawn(e){e.by=e.y;e.cd=90;},
+    update(e){
+      e.y=e.by+Math.sin(frame*.03)*10;
+      if(near(e,360)){
+        e.x+=dirTo(e)*.42;
+        if(--e.cd<=0){
+          e.cd=108;const d=dirTo(e);
+          for(let k=-2;k<=2;k++)shot(e.x+54,e.y+66,d*2.15,k*.7,P);
+          bossSfx('rider');
+        }
+      }
+    },
+    draw(e,x,y,fl){
+      ctx.fillStyle='rgba(155,107,214,.2)';ctx.beginPath();ctx.arc(x+20,y+22,26,0,7);ctx.fill();
+      fill(body(fl,G),x,y+12,40,22);fill(D,x+4,y+15,32,16);
+      fill(M,x+8,y+8,24,6);fill(M,x-5,y+18,8,10);fill(M,x+37,y+18,8,10);
+      fill(K,x+14,y,12,10);                         // 搭乗者
+      fill('#2b2140',x+16,y+3,8,4);fill(O,x+18,y+10,4,3);
+      const hot=e.cd<36;
+      fill(hot?R:C,x+12,y+20,16,6);fill(K,x+15,y+22,3,2);fill(K,x+22,y+22,3,2);
+      fill(hot?Y:S,x+16,y+30,8,4);
+    }}
 
   };
 
